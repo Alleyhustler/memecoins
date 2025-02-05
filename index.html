@@ -8,6 +8,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  
 </head>
 <body class="bg-gray-900 text-white">
   <header class="p-5 bg-gray-800 text-center">
@@ -37,11 +38,14 @@
   </main>
 
   <script>
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js';
-    import { getFirestore, collection, addDoc, getDocs, query, orderBy } from 'https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js';
+    // Import necessary Firebase functions
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
 
+    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+
 
     // Firebase configuration
     const firebaseConfig = {
@@ -78,10 +82,14 @@
         return;
     }
 
-    const transaction = { coinName, coinAmount, coinPrice, timestamp: new Date() };
     try {
-        await db.collection('transactions').add(transaction);
-        console.log('Transaction successfully added:', transaction);
+        await addDoc(collection(db, 'transactions'), {
+        coinName,
+        coinAmount,
+        coinPrice,
+        timestamp: new Date()
+        });
+        console.log('Transaction successfully added!');
         document.getElementById('coin-name').value = '';
         document.getElementById('coin-amount').value = '';
         document.getElementById('coin-price').value = '';
@@ -92,19 +100,19 @@
     }
 
 
+
     async function loadTransactions() {
-      const snapshot = await db.collection('transactions').orderBy('timestamp').get();
-      const transactions = snapshot.docs.map(doc => doc.data());
+    const q = query(collection(db, 'transactions'), orderBy('timestamp'));
+    const querySnapshot = await getDocs(q);
+    const transactionHistory = document.getElementById('transaction-history');
+    transactionHistory.innerHTML = '';
 
-      const transactionHistory = document.getElementById('transaction-history');
-      transactionHistory.innerHTML = '';
+    let totalValue = 0;
+    chartData.labels = [];
+    chartData.datasets[0].data = [];
 
-      let totalValue = 0;
-      chartData.labels = [];
-      chartData.datasets[0].data = [];
-
-      transactions.forEach(transaction => {
-        const { coinName, coinAmount, coinPrice, timestamp } = transaction;
+    querySnapshot.forEach((doc) => {
+        const { coinName, coinAmount, coinPrice, timestamp } = doc.data();
         const transactionValue = coinAmount * coinPrice;
         totalValue += transactionValue;
 
@@ -116,10 +124,11 @@
         const date = new Date(timestamp.seconds * 1000).toLocaleDateString();
         chartData.labels.push(date);
         chartData.datasets[0].data.push(totalValue);
-      });
+    });
 
-      updateChart();
+    updateChart();
     }
+
 
     loadTransactions();
   </script>

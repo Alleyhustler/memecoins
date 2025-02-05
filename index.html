@@ -22,7 +22,7 @@
         <input id="coin-name" type="text" placeholder="Coin Name" class="p-2 rounded bg-gray-700 text-white mb-2 w-full">
         <input id="coin-amount" type="number" placeholder="Amount" class="p-2 rounded bg-gray-700 text-white mb-2 w-full">
         <input id="coin-price" type="number" placeholder="Price per Coin ($)" class="p-2 rounded bg-gray-700 text-white mb-2 w-full">
-        <button onclick="addTransaction()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full">Add Transaction</button>
+        <button onclick="addTransaction()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full">Add Transaction</button>        
       </div>
     </section>
 
@@ -37,16 +37,11 @@
     </section>
   </main>
 
-  <script>
-    // Import necessary Firebase functions
+  <script type="module">
+    // Import Firebase dependencies
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
     import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
-
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-
+  
     // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyAJ4nVAzTZE9PPO_rMXxShJ1PjRXX3lfSY",
@@ -56,81 +51,64 @@
       messagingSenderId: "707693218177",
       appId: "1:707693218177:web:3110d7fa5fe267a9e00080"
     };
-
-
-    // Initialize Firebase
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-
-    // Chart instance
-    let portfolioChart;
-    let chartData = { labels: [], datasets: [{ label: 'Portfolio Value ($)', data: [], backgroundColor: 'rgba(75, 192, 192, 0.2)', borderColor: 'rgba(75, 192, 192, 1)', borderWidth: 1 }]};
-
-    function updateChart() {
-      if (portfolioChart) portfolioChart.destroy();
-      const ctx = document.getElementById('portfolioChart').getContext('2d');
-      portfolioChart = new Chart(ctx, { type: 'line', data: chartData, options: { responsive: true, scales: { y: { beginAtZero: true }}}});
-    }
-
+  
+    // Initialize Firebase and Firestore
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+  
+    // Function to add a transaction
     async function addTransaction() {
-    const coinName = document.getElementById('coin-name').value;
-    const coinAmount = parseFloat(document.getElementById('coin-amount').value);
-    const coinPrice = parseFloat(document.getElementById('coin-price').value);
-
-    if (!coinName || isNaN(coinAmount) || isNaN(coinPrice)) {
+      const coinName = document.getElementById('coin-name').value;
+      const coinAmount = parseFloat(document.getElementById('coin-amount').value);
+      const coinPrice = parseFloat(document.getElementById('coin-price').value);
+  
+      if (!coinName || isNaN(coinAmount) || isNaN(coinPrice)) {
         alert('Please fill out all fields correctly.');
         return;
-    }
-
-    try {
+      }
+  
+      try {
         await addDoc(collection(db, 'transactions'), {
-        coinName,
-        coinAmount,
-        coinPrice,
-        timestamp: new Date()
+          coinName,
+          coinAmount,
+          coinPrice,
+          timestamp: new Date()
         });
-        console.log('Transaction successfully added!');
+        alert('Transaction added successfully!');
         document.getElementById('coin-name').value = '';
         document.getElementById('coin-amount').value = '';
         document.getElementById('coin-price').value = '';
         loadTransactions();
-    } catch (error) {
+      } catch (error) {
         console.error('Error adding transaction:', error);
+      }
     }
-    }
-
-
-
+  
+    // Function to load transactions
     async function loadTransactions() {
-    const q = query(collection(db, 'transactions'), orderBy('timestamp'));
-    const querySnapshot = await getDocs(q);
-    const transactionHistory = document.getElementById('transaction-history');
-    transactionHistory.innerHTML = '';
-
-    let totalValue = 0;
-    chartData.labels = [];
-    chartData.datasets[0].data = [];
-
-    querySnapshot.forEach((doc) => {
-        const { coinName, coinAmount, coinPrice, timestamp } = doc.data();
+      const q = query(collection(db, 'transactions'), orderBy('timestamp'));
+      const querySnapshot = await getDocs(q);
+      const transactionHistory = document.getElementById('transaction-history');
+      transactionHistory.innerHTML = '';
+  
+      querySnapshot.forEach((doc) => {
+        const { coinName, coinAmount, coinPrice } = doc.data();
         const transactionValue = coinAmount * coinPrice;
-        totalValue += transactionValue;
-
+  
         const listItem = document.createElement('li');
         listItem.className = 'bg-gray-800 p-4 rounded shadow-md';
         listItem.textContent = `${coinName} - ${coinAmount} coins at $${coinPrice} each. Value: $${transactionValue.toFixed(2)}`;
         transactionHistory.appendChild(listItem);
-
-        const date = new Date(timestamp.seconds * 1000).toLocaleDateString();
-        chartData.labels.push(date);
-        chartData.datasets[0].data.push(totalValue);
-    });
-
-    updateChart();
+      });
     }
-
-
+  
+    window.addTransaction = addTransaction;
+    window.loadTransactions = loadTransactions;
+  
+    // Load initial transactions
     loadTransactions();
+  </script>
+  
   </script>
 </body>
 </html>

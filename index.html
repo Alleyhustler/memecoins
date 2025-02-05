@@ -37,15 +37,21 @@
   </main>
 
   <script>
-    // Firebase configuratio
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js';
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy } from 'https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js';
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Firebase configuration
     const firebaseConfig = {
-  apiKey: "AIzaSyAJ4nVAzTZE9PPO_rMXxShJ1PjRXX3lfSY",
-  authDomain: "memecoin-port.firebaseapp.com",
-  projectId: "memecoin-port",
-  storageBucket: "memecoin-port.firebasestorage.app",
-  messagingSenderId: "707693218177",
-  appId: "1:707693218177:web:3110d7fa5fe267a9e00080"
-};
+      apiKey: "AIzaSyAJ4nVAzTZE9PPO_rMXxShJ1PjRXX3lfSY",
+      authDomain: "memecoin-port.firebaseapp.com",
+      projectId: "memecoin-port",
+      storageBucket: "memecoin-port.firebasestorage.app",
+      messagingSenderId: "707693218177",
+      appId: "1:707693218177:web:3110d7fa5fe267a9e00080"
+    };
 
 
     // Initialize Firebase
@@ -63,23 +69,28 @@
     }
 
     async function addTransaction() {
-      const coinName = document.getElementById('coin-name').value;
-      const coinAmount = parseFloat(document.getElementById('coin-amount').value);
-      const coinPrice = parseFloat(document.getElementById('coin-price').value);
+    const coinName = document.getElementById('coin-name').value;
+    const coinAmount = parseFloat(document.getElementById('coin-amount').value);
+    const coinPrice = parseFloat(document.getElementById('coin-price').value);
 
-      if (!coinName || isNaN(coinAmount) || isNaN(coinPrice)) {
+    if (!coinName || isNaN(coinAmount) || isNaN(coinPrice)) {
         alert('Please fill out all fields correctly.');
         return;
-      }
-
-      const transaction = { coinName, coinAmount, coinPrice, timestamp: new Date() };
-      await db.collection('transactions').add(transaction);
-
-      document.getElementById('coin-name').value = '';
-      document.getElementById('coin-amount').value = '';
-      document.getElementById('coin-price').value = '';
-      loadTransactions();
     }
+
+    const transaction = { coinName, coinAmount, coinPrice, timestamp: new Date() };
+    try {
+        await db.collection('transactions').add(transaction);
+        console.log('Transaction successfully added:', transaction);
+        document.getElementById('coin-name').value = '';
+        document.getElementById('coin-amount').value = '';
+        document.getElementById('coin-price').value = '';
+        loadTransactions();
+    } catch (error) {
+        console.error('Error adding transaction:', error);
+    }
+    }
+
 
     async function loadTransactions() {
       const snapshot = await db.collection('transactions').orderBy('timestamp').get();
